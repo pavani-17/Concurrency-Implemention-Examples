@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 199309L //required for clock
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
@@ -12,7 +13,15 @@
 #include <inttypes.h>
 #include <math.h>
 
+
 #define ll long long int
+
+struct arg 
+{
+    ll l;
+    ll r;
+    ll *arr;
+};
 
 ll * shareMem(size_t size){    
     // Shared memory between process for merge sort using child processes
@@ -138,13 +147,47 @@ void mergeSort_process(ll l, ll r, ll *arr)
     return;
 }
 
+void *mergeSort_threaded (void *a)
+{
+    struct arg *args = (struct arg*) a;
+    ll l = args->l;
+    ll r = args->r;
+    ll *arr = args->arr;
+    if(l<r)
+    {
+        ll m = l + (r-l)/2;
+
+        struct arg left_trd;
+        left_trd.l = l;
+        left_trd.r = m;
+        left_trd.arr = arr;
+        pthread_t left_id;
+        
+        struct arg right_trd;
+        right_trd.l = m+1;
+        right_trd.r = r;
+        right_trd.arr = arr;
+        pthread_t right_id;
+
+        pthread_create(&left_id, NULL, mergeSort_threaded, &left_trd);
+        pthread_create(&right_id, NULL, mergeSort_threaded, &right_trd);
+
+        pthread_join(left_id,NULL);
+        pthread_join(right_id,NULL);
+
+        merge(l,m,r,arr);
+    }
+    return NULL;
+}
+
 void main()
 {
+    struct timespec ts;
     ll n;
     printf("Enter the number of elements in the array:\n");
     scanf("%lld",&n);
-    ll arr[n];
-    ll *arr_proc = shareMem(sizeof(ll)*(n+5));
+    ll arr[n], arr_th[n];
+    ll *arr_proc = shareMem(sizeof(ll)*(n+5)); // Creating shared memory for processes
     printf("Enter the array elements:\n");
     ll i;
     for(i=0;i<n;i++)
@@ -152,20 +195,52 @@ void main()
         scanf("%lld",&arr[i]);
         arr_proc[i] = arr[i];
     }
+    
+    printf("\n");
+
+    clock_gettime(CLOCK_MONOTONIC_RAW,&ts);
+    long double st = ts.tv_nsec/(1e9) + ts.tv_sec;
     mergeSort_process(0,n-1,arr_proc);
+    clock_gettime(CLOCK_MONOTONIC_RAW,&ts);
+    long double en = ts.tv_nsec/(1e9) + ts.tv_sec;
     printf("Merge Sort by creating child process:\n");
     for(i=0;i<n;i++)
     {
         printf("%lld ",arr_proc[i]);
     }
     printf("\n");
+    printf("Time taken : %Lf \n\n",en-st);
 
+    struct arg initial;
+    initial.l=0;
+    initial.r = n-1;
+    initial.arr = arr;
+
+    pthread_t int_id;
+    clock_gettime(CLOCK_MONOTONIC_RAW,&ts);
+    st = ts.tv_nsec/(1e9) + ts.tv_sec;
+    pthread_create(&int_id,NULL,mergeSort_threaded,&initial);
+    pthread_join(int_id,NULL);
+    clock_gettime(CLOCK_MONOTONIC_RAW,&ts);
+    en = ts.tv_nsec/(1e9) + ts.tv_sec;
+    printf("Threaded Merge Sort\n");
+    for(i=0;i<n;i++)
+    {
+        printf("%lld ",arr[i]);
+    }
+    printf("\n");
+    printf("Time taken : %Lf \n\n",en-st);
+
+    clock_gettime(CLOCK_MONOTONIC_RAW,&ts);
+    st = ts.tv_nsec/(1e9) + ts.tv_sec;
     mergeSort(0,n-1,arr);
+    clock_gettime(CLOCK_MONOTONIC_RAW,&ts);
+    en = ts.tv_nsec/(1e9) + ts.tv_sec;
     printf("Normal Merge Sort\n");
     for(i=0;i<n;i++)
     {
         printf("%lld ",arr[i]);
     }
     printf("\n");
-
+    printf("Time taken : %Lf \n\n",en-st);
 }
