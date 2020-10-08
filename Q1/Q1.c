@@ -42,6 +42,22 @@ ll * shareMem(size_t size){
     return (ll*)shmat(shm_id, NULL, 0);
 }
 
+void selectionSort (ll l, ll r, ll* arr)
+{
+    ll i,j;
+    for(i=l;i<=r;i++)
+    {
+        for(j=i+1;j<=r;j++)
+        {
+            if(arr[i] > arr[j])
+            {
+                ll temp = arr[i];
+                arr[i] = arr[j];
+                arr[j] = temp;
+            }
+        }
+    }
+}
 
 void merge(ll l, ll m, ll r, ll* arr)
 {
@@ -99,6 +115,11 @@ void mergeSort (ll l, ll r, ll *arr)
 {
     if(l<r)
     {
+        if(r-l <= 5)
+        {
+            selectionSort(l,r,arr);
+            return;
+        }
         ll m = l + (r-l)/2;
         mergeSort(l,m,arr);
         mergeSort(m+1,r,arr);
@@ -110,6 +131,11 @@ void mergeSort_process(ll l, ll r, ll *arr)
 {
     if(l<r)
     {
+        if(r-l <= 5)
+        {
+            selectionSort(l,r,arr);
+            return;
+        }
         ll m = l + (r-l)/2;
         pid_t left_proc = fork();
         if(left_proc < 0)
@@ -155,6 +181,11 @@ void *mergeSort_threaded (void *a)
     ll *arr = args->arr;
     if(l<r)
     {
+        if(r-l <= 5)
+        {
+            selectionSort(l,r,arr);
+            return NULL;
+        }
         ll m = l + (r-l)/2;
 
         struct arg left_trd;
@@ -194,6 +225,7 @@ void main()
     {
         scanf("%lld",&arr[i]);
         arr_proc[i] = arr[i];
+        arr_th[i] = arr[i];
     }
     
     printf("\n");
@@ -214,7 +246,7 @@ void main()
     struct arg initial;
     initial.l=0;
     initial.r = n-1;
-    initial.arr = arr;
+    initial.arr = arr_th;
 
     pthread_t int_id;
     clock_gettime(CLOCK_MONOTONIC_RAW,&ts);
@@ -226,7 +258,7 @@ void main()
     printf("Threaded Merge Sort\n");
     for(i=0;i<n;i++)
     {
-        printf("%lld ",arr[i]);
+        printf("%lld ",arr_th[i]);
     }
     printf("\n");
     printf("Time taken : %Lf \n\n",en-st);
