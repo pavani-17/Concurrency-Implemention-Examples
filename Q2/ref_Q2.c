@@ -171,6 +171,9 @@ void* vaccination_zones(void* std)
                 while(inp->stud_done[i]);
             }
         }
+        pthread_mutex_lock(&(pc[inp->pharma_comp_id]->comp_lock));
+        pc[inp->pharma_comp_id]->use--;
+        pthread_mutex_unlock(&(pc[inp->pharma_comp_id]->comp_lock));
     }
 }
 
@@ -237,6 +240,7 @@ void main()
 {
     int i;
     scanf("%d %d %d",&m,&n,&o);
+    pthread_mutex_init(&(lock_rem_stud),NULL);
     float prob[m];
     for(i=0;i<m;i++)
     {
