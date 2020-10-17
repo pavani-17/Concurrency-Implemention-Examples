@@ -13,12 +13,12 @@
 #include <math.h>
 #include <stdbool.h>
 
-#define RED "\033[1;31m"
-#define GREEN "\033[1;32m"
-#define YELLOW "\033[1;33m"
-#define BLUE "\033[1;34m"
-#define MAGENTA "\033[1;35m"
-#define CYAN "\033[1;36m"
+#define RED "\033[1;91m"
+#define GREEN "\033[1;92m"
+#define YELLOW "\033[1;93m"
+#define BLUE "\033[1;94m"
+#define MAGENTA "\033[1;95m"
+#define CYAN "\033[1;96m"
 #define NORMAL "\033[0m"
 
 int n,m,o;
@@ -257,11 +257,21 @@ void* students(void* std)
     }
 }
 
-void main()
+int main()
 {
     int i;
     printf("Enter the number of pharmaceutical companies, vaccination zones and students: \n");
     scanf("%d %d %d",&m,&n,&o);
+    if(n==0 || m==0)
+    {
+        printf("Vaccination not possible\n");
+        return 0;
+    }
+    if(o==0)
+    {
+        printf("No students to vaccinate\n");
+        return 0;
+    }
     pthread_mutex_init(&(lock_rem_stud),NULL);
     float prob[m];
     printf("Enter the probabilities of each of the pharmaceutical companies:\n");
@@ -269,6 +279,7 @@ void main()
     {
         scanf("%f",&prob[i]);
     }
+    printf("Starting simulation\n");
     rem_stud = o;
     pthread_t ph_comp[m];
     pc = malloc(m*sizeof(pharma_company*));
@@ -314,4 +325,5 @@ void main()
         pthread_join(stud[i],NULL);
     }
     printf("Done Simulation\n");
+    return 0;
 }
