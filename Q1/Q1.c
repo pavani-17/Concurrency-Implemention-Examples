@@ -215,6 +215,7 @@ void main()
 {
     struct timespec ts;
     ll n;
+    long double t1,t2,t3;
     printf("Enter the number of elements in the array:\n");
     scanf("%lld",&n);
     ll arr[n], arr_th[n];
@@ -242,6 +243,7 @@ void main()
     }
     printf("\n");
     printf("Time taken : %Lf \n\n",en-st);
+    t1 = en - st;
 
     struct arg initial;
     initial.l=0;
@@ -262,6 +264,7 @@ void main()
     }
     printf("\n");
     printf("Time taken : %Lf \n\n",en-st);
+    t2 = en - st;
 
     clock_gettime(CLOCK_MONOTONIC_RAW,&ts);
     st = ts.tv_nsec/(1e9) + ts.tv_sec;
@@ -275,4 +278,14 @@ void main()
     }
     printf("\n");
     printf("Time taken : %Lf \n\n",en-st);
+    t3 = en - st;
+
+    printf("For %lld elements:\n",n);
+    printf("Normal merge sort                      : %Lf\n",t3);
+    printf("Merge sort by creating child processes : %Lf\n",t1);
+    printf("Threaded merge sort                    : %Lf\n",t2);
+    printf("\n");
+    printf("Normal merge sort ran:\n");;
+    printf("\t \t \t [%Lf] times faster than threaded merge sort\n",t2/t3);
+    printf("\t \t \t [%Lf] times faster than child process merge sort\n",t1/t3);
 }
