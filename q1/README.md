@@ -1,4 +1,4 @@
-# Merge Sort Parallelization
+# Concurrent Merge Sort 
 
 Merge Sort is a divide and conquer algorithm for sorting. It works by dividing the array into two halves, sorting the two halves and merging them. As the sorting of the two halves is independent, these two processes can be performed in parallel. In this program, we attempt to perform these parallel operations using child processes and threads, and compare the results to the normal merge sort algorithm. Note that the recursive merge sort algorithm is used in the program.
 
