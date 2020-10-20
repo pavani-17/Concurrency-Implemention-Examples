@@ -59,7 +59,6 @@ typedef struct musician
     pthread_cond_t mus_cond;
 } musician;
 
-
 typedef struct stage
 {
     int type;
@@ -94,7 +93,7 @@ void* stages(void* std)
         pthread_cond_wait(&(inp->stag_cond),&(inp->stage_lock));
         pthread_mutex_unlock(&(inp->stage_lock));
         pthread_mutex_lock(&(m[inp->mus_id]->mus_lock));
-        inp->time = t1 + rand()%(t2-t1+1);
+        //inp->time = t1 + rand()%(t2-t1+1); // time not here
         sleep(inp->time);
         if(inp->stage_state == STAGE_PERFORMING)
         {
@@ -102,16 +101,16 @@ void* stages(void* std)
             {
                 for(i=0;i<k;i++)
                 {
-                    if(m[i]->type == MUS_SINGER && i != inp->mus_id)
+                    if(m[i]->type == MUS_SINGER && i != inp->mus_id && (m[i]->mus_state == MUS_ALLOCATED || m[i]->mus_state == MUS_WAITING))
                     {
                         pthread_mutex_lock(&(m[i]->mus_lock));
                         if(m[i]->mus_state == MUS_ALLOCATED && m[i]->type == MUS_SINGER)
                         {
                             m[i]->mus_state = MUS_PERFORMING;
-                            printf("Singer %s joined musician %s on %s stage %d, increasing the perfomance by 2 more seconds\n",m[i]->name,m[inp->mus_id]->name,inp->type==MUS_ACOUSTIC ? "Acoustic" : "Electric",inp->stage_id);
-                            sleep(2);
+                            printf(CYAN"Singer %s joined musician %s on %s stage %d, increasing the perfomance by 2 more seconds\n"NORMAL,m[i]->name,m[inp->mus_id]->name,inp->type==MUS_ACOUSTIC ? "Acoustic" : "Electric",inp->stage_id);
+                            sleep(2);       
+                            printf(GREEN"Singer %s and Musician %s completed performance on %s stage %d\n"NORMAL,m[i]->name,m[inp->mus_id]->name,inp->type==MUS_ACOUSTIC ? "Acoustic" : "Electric",inp->stage_id);
                             pthread_mutex_unlock(&(m[i]->mus_lock));
-                            printf("Singer %s and Musician %s completed performance on %s stage %d\n",m[i]->name,m[inp->mus_id]->name,inp->type==MUS_ACOUSTIC ? "Acoustic" : "Electric",inp->stage_id);
                             pthread_cond_signal(&(m[i]->mus_cond));
                             pthread_mutex_unlock(&(m[inp->mus_id]->mus_lock));
                             pthread_cond_signal(&(m[inp->mus_id]->mus_cond));
@@ -128,23 +127,21 @@ void* stages(void* std)
                 if(i==k)
                 {
                     //sem_wait(&singer);
-                    printf("Musician %s completed performance on %s stage %d\n",m[inp->mus_id]->name,inp->type==MUS_ACOUSTIC ? "Acoustic" : "Electric",inp->stage_id);
+                    printf(GREEN"Musician %s completed performance on %s stage %d\n"NORMAL,m[inp->mus_id]->name,inp->type==MUS_ACOUSTIC ? "Acoustic" : "Electric",inp->stage_id);
                     pthread_mutex_unlock(&(m[inp->mus_id]->mus_lock));
                     pthread_cond_signal(&(m[inp->mus_id]->mus_cond));
                 }
             }
             else
             {
-                printf("Musician %s completed performance on %s stage %d\n",m[inp->mus_id]->name,inp->type==MUS_ACOUSTIC ? "Acoustic" : "Electric",inp->stage_id);
+                printf(GREEN"Musician %s completed performance on %s stage %d\n"NORMAL,m[inp->mus_id]->name,inp->type==MUS_ACOUSTIC ? "Acoustic" : "Electric",inp->stage_id);
                 pthread_mutex_unlock(&(m[inp->mus_id]->mus_lock));
                 pthread_cond_signal(&(m[inp->mus_id]->mus_cond));
             }
-            
-            
         }
         else
         {
-            printf("Singer %s completed playing on %s stage %d\n",m[inp->mus_id]->name,inp->type==MUS_ACOUSTIC ? "Acoustic" : "Electric",inp->stage_id);
+            printf(GREEN"Singer %s completed playing on %s stage %d\n"NORMAL,m[inp->mus_id]->name,inp->type==MUS_ACOUSTIC ? "Acoustic" : "Electric",inp->stage_id);
             pthread_mutex_unlock(&(m[inp->mus_id]->mus_lock));
             pthread_cond_signal(&(m[inp->mus_id]->mus_cond));
         }
@@ -167,18 +164,19 @@ void getAcousticStage(musician* inp, int type)
             pthread_mutex_unlock(&(st[i]->stage_lock));
             continue;
         }
+        st[i]->time = t1 + rand()%(t2-t1+1);
         if(type==MUSICIAN)
         {
             st[i]->stage_state = STAGE_PERFORMING;
             inp->mus_state = MUS_PERFORMING;
-            printf("Musician %s is starting performance on acoustic stage %d\n",inp->name,st[i]->stage_id);
+            printf(BLUE"Musician %s is starting performance on acoustic stage %d for time %d\n"NORMAL,inp->name,st[i]->stage_id,st[i]->time);
             sem_post(&singer);
         }
         else
         {
             st[i]->stage_state = STAGE_FULL;
             inp->mus_state = MUS_PERFORMING;
-            printf("Singer %s is starting performance on acoustic stage %d\n",inp->name,st[i]->stage_id);
+            printf(CYAN"Singer %s is starting performance on acoustic stage %d for time %d\n"NORMAL,inp->name,st[i]->stage_id,st[i]->time);
         }
         st[i]->mus_id = inp->mus_id;
         inp->stage_num = i;
@@ -207,14 +205,14 @@ void getElectricStage(musician* inp, int type)
         {
             st[i]->stage_state = STAGE_PERFORMING;
             inp->mus_state = MUS_PERFORMING;
-            printf("Musician %s is starting performance on electric stage %d\n",inp->name,st[i]->stage_id);
+            printf(MAGENTA"Musician %s is starting performance on electric stage %d\n"NORMAL,inp->name,st[i]->stage_id);
             sem_post(&singer);
         }
         else
         {
             st[i]->stage_state = STAGE_FULL;
             inp->mus_state = MUS_PERFORMING;
-            printf("Singer %s is starting performance on electric stage %d\n",inp->name,st[i]->stage_id);
+            printf(YELLOW"Singer %s is starting performance on electric stage %d\n"NORMAL,inp->name,st[i]->stage_id);
         }
         st[i]->mus_id = inp->mus_id;
         inp->stage_num = i;
@@ -228,7 +226,11 @@ void* waitAcoustic (void* std)
 {
     musician* inp = (musician*)std;
     sem_wait(&acoustic);
-    pthread_mutex_lock(&(inp->mus_lock));
+    if(pthread_mutex_trylock(&(inp->mus_lock)) == -1)
+    {
+        sem_post(&acoustic);
+        return NULL;
+    }
     if(inp->mus_state != MUS_WAITING)
     {
         sem_post(&acoustic);
@@ -246,7 +248,11 @@ void* waitElectric (void* std)
 {
     musician* inp = (musician*)std;
     sem_wait(&electric);
-    pthread_mutex_lock(&(inp->mus_lock));
+    if(pthread_mutex_trylock(&(inp->mus_lock)) == -1)
+    {
+        sem_post(&electric);
+        return NULL;
+    }
     if(inp->mus_state != MUS_WAITING)
     {
         sem_post(&electric);
@@ -264,16 +270,18 @@ void* waitSinger(void* std)
 {
     musician* inp = (musician*)std;
     sem_wait(&singer);
-    pthread_mutex_lock(&(inp->mus_lock));
+    if(pthread_mutex_trylock(&(inp->mus_lock)) == -1)
+    {
+        return NULL;
+    }
     if(inp->mus_state != MUS_WAITING)
     {
         pthread_mutex_unlock(&(inp->mus_lock));
-        pthread_mutex_unlock(&(inp->strong_lock));
         return NULL;
     }
     inp->mus_state = MUS_ALLOCATED;
     inp->type = MUS_SINGER;
-    printf("Singer %s will join a musician\n",inp->name);
+    printf(YELLOW"Singer %s will join a musician\n"NORMAL,inp->name);
     pthread_mutex_unlock(&(inp->mus_lock));
     pthread_cond_signal(&(inp->mus_cond));
     return NULL;
@@ -283,7 +291,7 @@ void* musicians(void* std)
 {
     musician* inp = (musician*)std;
     sleep(inp->arr_time);
-    printf("%s arrived\n",inp->name);
+    printf(GREEN"%s arrived\n"NORMAL,inp->name);
     inp->mus_state = MUS_WAITING;
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME,&ts);
@@ -292,7 +300,7 @@ void* musicians(void* std)
     {
         if(sem_timedwait(&acoustic,&ts)==-1 && errno == ETIMEDOUT)
         {
-            printf("%s did not get a stage.\n",inp->name);
+            printf(RED"%s did not get a stage.\n"NORMAL,inp->name);
             inp->mus_state = MUS_LEFT;
             return NULL;
         }
@@ -304,7 +312,7 @@ void* musicians(void* std)
     {
         if(sem_timedwait(&electric,&ts)==-1 && errno == ETIMEDOUT)
         {
-            printf("%s did not get a stage.\n",inp->name);
+            printf(RED"%s did not get a stage.\n"NORMAL,inp->name);
             inp->mus_state = MUS_LEFT;
             return NULL;
         }
@@ -321,11 +329,12 @@ void* musicians(void* std)
         pthread_cond_timedwait(&(inp->mus_cond),&(inp->mus_lock),&ts);
         if(inp->mus_state == MUS_WAITING)
         {
-            printf("%s could not get a stage\n",inp->name);
+            printf(RED"%s could not get a stage\n"NORMAL,inp->name);
             inp->mus_state = MUS_LEFT;
             pthread_mutex_unlock(&(inp->mus_lock));
             return NULL;
         }
+
         if(inp->type == MUS_ACOUSTIC)
         {
             getAcousticStage(inp,MUSICIAN);
@@ -346,7 +355,7 @@ void* musicians(void* std)
         pthread_cond_timedwait(&(inp->mus_cond),&(inp->mus_lock),&ts);
         if(inp->mus_state == MUS_WAITING)
         {
-            printf("%s could not get a stage\n",inp->name);
+            printf(RED"%s could not get a stage\n"NORMAL,inp->name);
             inp->mus_state = MUS_LEFT;
             pthread_mutex_unlock(&(inp->mus_lock));
             return NULL;
@@ -361,8 +370,9 @@ void* musicians(void* std)
         }
         pthread_cond_wait(&(inp->mus_cond),&(inp->mus_lock));
     }
+    printf(YELLOW"%s Waiting for T-Shirt\n"NORMAL,inp->name);
     sem_wait(&club_cord);
-    printf("%s collecting T-Shirt\n",inp->name);
+    printf(GREEN"%s collecting T-Shirt\n"NORMAL,inp->name);
     sleep(2);
     sem_post(&club_cord);
     pthread_mutex_unlock(&(inp->mus_lock));
@@ -377,12 +387,6 @@ int main()
     char mus_name[k][500];
     char mus_inst[k][2];
     int mus_arrtime[k];
-
-    printf("Enter the musician details:\n");
-    for(i=0;i<k;i++)
-    {
-        scanf("%s %s %d",mus_name[i],mus_inst[i],&mus_arrtime[i]);
-    }
 
     sem_init(&club_cord,0,c);
     sem_init(&acoustic,0,0);
@@ -411,7 +415,11 @@ int main()
         pthread_cond_init(&st[i]->stag_cond,NULL);
         pthread_create(&stage_thread[i],NULL,stages,(void*)st[i]);
     }
-
+    printf("Enter the musician details:\n");
+    for(i=0;i<k;i++)
+    {
+        scanf("%s %s %d",mus_name[i],mus_inst[i],&mus_arrtime[i]);
+    }
     m = malloc(k*sizeof(musician*));
     for(i=0;i<k;i++)
     {
@@ -449,4 +457,3 @@ int main()
     }
     return 0;
 }
-
